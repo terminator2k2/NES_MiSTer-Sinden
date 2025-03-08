@@ -41,6 +41,7 @@ module emu
 	input  [11:0] HDMI_WIDTH,
 	input  [11:0] HDMI_HEIGHT,
 	output        HDMI_FREEZE,
+	output        gun_border_en,
 
 `ifdef MISTER_FB
 	// Use framebuffer in DDRAM
@@ -164,6 +165,7 @@ assign AUDIO_S   = 0;
 assign AUDIO_L   = sample[15:0];
 assign AUDIO_R   = AUDIO_L;
 assign AUDIO_MIX = 0;
+assign gun_border_en = status[54];
 
 assign LED_USER  = downloading | (loader_fail & led_blink) | (bk_state != S_IDLE) | (bk_pending & ~status[50]);
 assign LED_DISK  = 0;
@@ -244,6 +246,7 @@ parameter CONF_STR = {
 	"d6P1O5,Vertical Crop,Disabled,216p(5x);",
 	"d6P1o36,Crop Offset,0,2,4,8,10,12,-12,-10,-8,-6,-4,-2;",
 	"P1o78,Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
+	"P1oM,Sinden Boarder,Off,On;",
 	"P1-;",
 	"P1O4,Hide Overscan,Off,On;",
 	"P1ORS,Mask Edges,Off,Left,Both,Auto;",
