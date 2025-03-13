@@ -229,7 +229,6 @@ ENTITY ascal IS
 		vmax    : IN natural RANGE 0 TO 4095; -- 0 <= vmin < vmax < vdisp
 		vrr     : IN std_logic := '0';
 		vrrmax  : IN natural RANGE 0 TO 4095 := 0;
-		swblack : IN std_logic := '0';        -- will output 3 black frame on every resolution switch
 
 		-- Scaler format. 00=16bpp 565, 01=24bpp 10=32bpp
 		format  : IN unsigned(1 DOWNTO 0) :="01";
