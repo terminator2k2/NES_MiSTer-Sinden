@@ -517,7 +517,6 @@ ARCHITECTURE rtl OF ascal IS
 	SIGNAL o_divrun : std_logic;
 	SIGNAL o_hacpt,o_vacpt : unsigned(11 DOWNTO 0);
 	SIGNAL o_vacptl : unsigned(1 DOWNTO 0);
-	signal o_newres : integer range 0 to 3;
 
 	-----------------------------------------------------------------------------
 	FUNCTION shift_ishift(shift : unsigned(0 TO 119);
