@@ -1897,7 +1897,7 @@ BEGIN
 				o_ivsize<=i_vrsize; -- <ASYNC>
 				o_hdown<=i_hdown; -- <ASYNC>
 				o_vdown<=i_vdown; -- <ASYNC>
-
+                        END IF;
 			-- Simultaneous change of input and output framebuffers
 			IF o_vsv(1)='1' AND o_vsv(0)='0' AND
 				o_iendframe0='1' AND o_iendframe02='0' THEN
