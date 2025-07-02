@@ -43,6 +43,7 @@ module emu
 	output        HDMI_FREEZE,
 	output        HDMI_BLACKOUT,
 	output        HDMI_BOB_DEINT,
+	output        GUN_BORDER_EN,
 
 `ifdef MISTER_FB
 	// Use framebuffer in DDRAM
@@ -166,6 +167,7 @@ assign AUDIO_S   = 0;
 assign AUDIO_L   = sample[15:0];
 assign AUDIO_R   = AUDIO_L;
 assign AUDIO_MIX = 0;
+assign GUN_BORDER_EN = status[54];
 
 assign LED_USER  = downloading | (loader_fail & led_blink) | (bk_state != S_IDLE) | (bk_pending & ~status[50]);
 assign LED_DISK  = 0;
@@ -216,7 +218,7 @@ end
 // 0         1         2         3          4         5         6
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
-// XXXXXXXX XX     XXXXXXXXXXXXX XX XXXXXXXXXXXXXXXXXXXXXX
+// XXXXXXXX XX     XXXXXXXXXXXXX XX XXXXXXXXXXXXXXXXXXXXXXX
 
 `include "build_id.v"
 parameter CONF_STR = {
@@ -248,6 +250,7 @@ parameter CONF_STR = {
 	"d6P1O5,Vertical Crop,Disabled,216p(5x);",
 	"d6P1o36,Crop Offset,0,2,4,8,10,12,-12,-10,-8,-6,-4,-2;",
 	"P1o78,Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
+	"P1oM,Sinden Boarder,Off,On;",
 	"P1-;",
 	"P1O4,Hide Overscan,Off,On;",
 	"P1ORS,Mask Edges,Off,Left,Both,Auto;",
