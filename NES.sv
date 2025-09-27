@@ -185,6 +185,11 @@ wire       vcrop_en = status[5];
 wire [3:0] vcopt    = status[38:35];
 reg        en216p;
 reg  [4:0] voff;
+// Gun Border control from status register bit 29
+wire border_control = status[29];
+// Add a new variable for border size
+wire [3:0] menu_border_width = status[56:54];
+
 always @(posedge CLK_VIDEO) begin
 	en216p <= ((HDMI_WIDTH == 1920) && (HDMI_HEIGHT == 1080) && !forced_scandoubler && !scale);
 	voff <= (vcopt < 6) ? {vcopt,1'b0} : ({vcopt,1'b0} - 5'd24);
@@ -216,7 +221,7 @@ end
 // 0         1         2         3          4         5         6
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
-// XXXXXXXX XX     XXXXXXXXXXXXX XX XXXXXXXXXXXXXXXXXXXXXX
+// XXXXXXXX XX     XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXXXXXXXXXXX
 
 `include "build_id.v"
 parameter CONF_STR = {
@@ -252,6 +257,8 @@ parameter CONF_STR = {
 	"P1O4,Hide Overscan,Off,On;",
 	"P1ORS,Mask Edges,Off,Left,Both,Auto;",
 	"P1OP,Extra Sprites,Off,On;",
+	"P1OT,Sinden Border,Off,On;",
+	"P1oMO,Sinden Border Size,0,5,10,14,17,20;",
 	"P1-;",
 	"P1OUV,Audio Enable,Both,Internal,Cart Expansion,None;",
 	"P2,Input Options;",
@@ -1136,6 +1143,8 @@ always @(posedge clk) begin
 end
 
 ///////////////////////////////////////////////////
+reg [7:0] border_size_h;
+reg [7:0] border_size_v;
 wire [2:0] scale = status[3:1];
 wire [2:0] sl = scale ? scale - 1'd1 : 3'd0;
 assign VGA_SL = sl[1:0];
@@ -1144,10 +1153,13 @@ wire [1:0] reticle;
 wire hold_reset;
 wire ce_pix;
 wire HSync,VSync,HBlank,VBlank;
-wire [7:0] R,G,B;
+// Add new video signals
+wire [7:0] R_core,G_core,B_core;
+wire [7:0] R_border,G_border,B_border;
 
 wire [1:0] nes_ce_video = corepaused ? videopause_ce : nes_ce;
 
+// The original video module outputs to the new signals
 video video
 (
 	.*,
@@ -1164,8 +1176,33 @@ video video
 	.load_color_index(pal_index),
 	.emphasis(emphasis),
 	.reticle(~status[22] ? reticle : 2'b00),
-	.pal_video(pal_video)
+	.pal_video(pal_video),
+	.R(R_core), .G(G_core), .B(B_core) // Connect core video output to new signals
 );
+
+// Constants for border size and color
+
+
+always @(posedge clk) begin
+    case (menu_border_width)
+        3'd0:  begin border_size_h <= 8'd0;  border_size_v <= 8'd0;  end
+        3'd1:  begin border_size_h <= 8'd5; border_size_v <= 8'd5; end
+        3'd2:  begin border_size_h <= 8'd10; border_size_v <= 8'd10; end
+        3'd3:  begin border_size_h <= 8'd14; border_size_v <= 8'd14; end
+        3'd4:  begin border_size_h <= 8'd17; border_size_v <= 8'd17; end
+        3'd5:  begin border_size_h <= 8'd20; border_size_v <= 8'd20; end
+        default: begin border_size_h <= 8'd0;  border_size_v <= 8'd0;  end
+    endcase
+end
+
+
+// Conditional video signal generation with border
+wire [7:0] R_final, G_final, B_final;
+
+// When border_control is active, draw the bordered video. Otherwise, use the core video directly.
+assign R_final = border_control ? ((scanline < border_size_v) | (scanline >= (240 - border_size_v)) | (cycle < border_size_h) | (cycle >= (260 - border_size_h)) ? 8'hFF : R_core) : R_core;
+assign G_final = border_control ? ((scanline < border_size_v) | (scanline >= (240 - border_size_v)) | (cycle < border_size_h) | (cycle >= (260 - border_size_h)) ? 8'hFF : G_core) : G_core;
+assign B_final = border_control ? ((scanline < border_size_v) | (scanline >= (240 - border_size_v)) | (cycle < border_size_h) | (cycle >= (260 - border_size_h)) ? 8'hFF : B_core) : B_core;
 
 video_mixer #(260, 0, 1) video_mixer
 (
@@ -1173,7 +1210,8 @@ video_mixer #(260, 0, 1) video_mixer
 	.freeze_sync(),
 	.VGA_DE(vga_de),
 	.hq2x(scale==1),
-	.scandoubler(scale || forced_scandoubler)
+	.scandoubler(scale || forced_scandoubler),
+	.R(R_final), .G(G_final), .B(B_final) // Connect the final video output to the mixer
 );
 
 ////////////////////////////  CODES  ///////////////////////////////////
